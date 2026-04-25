@@ -11,7 +11,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Corretto: rimosso l'underscore dalla variabile locale
     final GoRouter router = GoRouter(
       routes: [
         GoRoute(
@@ -23,8 +22,9 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp.router(
       title: 'Totem Hamburgeria',
+      debugShowCheckedModeBanner: false, // <-- TOGLIE LA SCRITTA DEBUG
       theme: ThemeData(
-        primarySwatch: Colors.orange,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
         useMaterial3: true,
       ),
       routerConfig: router,
