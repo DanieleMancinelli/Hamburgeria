@@ -5,7 +5,7 @@ import '../models/prodotto.dart';
 class ApiService {
   // Se sei su Codespaces, useremo l'URL che Flask ti fornisce, 
   // per ora mettiamo localhost, poi lo cambieremo se serve.
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://super-dollop-v65r9wj99v4hxx7j-5000.app.github.dev';
 
   Future<List<Prodotto>> prendiProdotti() async {
     final response = await http.get(Uri.parse('$baseUrl/prodotti'));

@@ -11,14 +11,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Configurazione di GoRouter
-    final GoRouter _router = GoRouter(
+    // Corretto: rimosso l'underscore dalla variabile locale
+    final GoRouter router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
           builder: (context, state) => const MenuScreen(),
         ),
-        // Qui aggiungeremo altre rotte come il Carrello in seguito
       ],
     );
 
@@ -28,7 +27,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.orange,
         useMaterial3: true,
       ),
-      routerConfig: _router,
+      routerConfig: router,
     );
   }
 }
