@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/prodotto.dart';
@@ -11,40 +12,62 @@ class MenuScreen extends StatefulWidget {
 
 class _MenuScreenState extends State<MenuScreen> {
   final ApiService apiService = ApiService();
-  late Future<List<Prodotto>> futureProdotti;
+  List<Prodotto> prodotti = [];
   List<Prodotto> carrello = [];
+  bool caricamento = true;
+  Timer? _timer;
+
+  // DEFINIAMO L'ORDINE FISSO DELLE CATEGORIE
+  final List<String> ordineCategorie = ['panini', 'contorni', 'bevande'];
 
   @override
   void initState() {
     super.initState();
-    futureProdotti = apiService.prendiProdotti();
+    caricaDati();
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) => caricaDati());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void caricaDati() async {
+    try {
+      final nuoviProdotti = await apiService.prendiProdotti();
+      if (!mounted) return;
+      setState(() {
+        prodotti = nuoviProdotti;
+        caricamento = false;
+      });
+    } catch (e) {
+      // Errore silenziato
+    }
   }
 
   double calcolaTotale() {
     return carrello.fold(0, (tot, prod) => tot + prod.prezzo);
   }
 
-  // Funzione per mostrare il riepilogo del carrello
   void mostraCarrello() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Permette alla tendina di essere più alta
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
               padding: const EdgeInsets.all(20),
-              height: MediaQuery.of(context).size.height * 0.7, // 70% dello schermo
+              height: MediaQuery.of(context).size.height * 0.7,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Riepilogo Ordine', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      const Text('Il tuo Ordine', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                       IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                     ],
                   ),
@@ -56,51 +79,35 @@ class _MenuScreenState extends State<MenuScreen> {
                             itemCount: carrello.length,
                             itemBuilder: (context, index) {
                               final voce = carrello[index];
-                              return Card(
-                                child: ListTile(
-                                  title: Text(voce.nome),
-                                  subtitle: Text('${voce.prezzo.toStringAsFixed(2)} €'),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                    onPressed: () {
-                                      // Rimuoviamo l'elemento sia dal carrello principale che dalla vista attuale
-                                      setState(() {
-                                        carrello.removeAt(index);
-                                      });
-                                      setModalState(() {}); 
-                                      if (carrello.isEmpty) Navigator.pop(context);
-                                    },
-                                  ),
+                              return ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: voce.immagineUrl.isNotEmpty 
+                                    ? Image.network(voce.immagineUrl, width: 40, height: 40, fit: BoxFit.cover, errorBuilder: (c,e,s) => const Icon(Icons.fastfood))
+                                    : const Icon(Icons.fastfood),
+                                ),
+                                title: Text(voce.nome),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () {
+                                    setState(() => carrello.removeAt(index));
+                                    setModalState(() {}); 
+                                    if (carrello.isEmpty) Navigator.pop(context);
+                                  },
                                 ),
                               );
                             },
                           ),
                   ),
                   const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Totale:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        Text('${calcolaTotale().toStringAsFixed(2)} €', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
-                      ],
-                    ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, minimumSize: const Size(double.infinity, 60)),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      inviaOrdine();
+                    },
+                    child: Text('CONFERMA ORDINE (${calcolaTotale().toStringAsFixed(2)} €)', style: const TextStyle(color: Colors.white, fontSize: 18)),
                   ),
-                  const SizedBox(height: 10),
-                  if (carrello.isNotEmpty)
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        minimumSize: const Size(double.infinity, 60),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        inviaOrdine();
-                      },
-                      child: const Text('INVIA ORDINE IN CUCINA', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    ),
                 ],
               ),
             );
@@ -112,19 +119,14 @@ class _MenuScreenState extends State<MenuScreen> {
 
   void inviaOrdine() async {
     if (carrello.isEmpty) return;
-    String dettagli = carrello.map((p) => p.nome).join(', ');
     try {
-      await apiService.inviaOrdine(calcolaTotale(), dettagli);
+      await apiService.inviaOrdine(calcolaTotale(), carrello.map((p) => p.nome).join(', '));
       if (!mounted) return;
       setState(() => carrello.clear());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ordine inviato! Buon appetito!'), backgroundColor: Colors.green),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ordine inviato!'), backgroundColor: Colors.green));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore: $e'), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Errore: $e'), backgroundColor: Colors.red));
     }
   }
 
@@ -135,66 +137,62 @@ class _MenuScreenState extends State<MenuScreen> {
         title: const Text('🍔 Hamburgeria Totem'),
         centerTitle: true,
         backgroundColor: Colors.orange,
-        elevation: 0,
       ),
-      body: FutureBuilder<List<Prodotto>>(
-        future: futureProdotti,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Text('Errore: ${snapshot.error}'));
-          final prodotti = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(10),
-            itemCount: prodotti.length,
-            itemBuilder: (context, index) {
-              final prodotto = prodotti[index];
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(10),
-                  leading: const CircleAvatar(backgroundColor: Colors.orangeAccent, child: Icon(Icons.fastfood, color: Colors.white)),
-                  title: Text(prodotto.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  subtitle: Text('${prodotto.prezzo.toStringAsFixed(2)} €', style: const TextStyle(color: Colors.green, fontSize: 16)),
-                  trailing: ElevatedButton(
-                    onPressed: () => setState(() => carrello.add(prodotto)),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                    child: const Text('Aggiungi', style: TextStyle(color: Colors.white)),
-                  ),
+      body: caricamento 
+          ? const Center(child: CircularProgressIndicator())
+          : prodotti.isEmpty
+              ? const Center(child: Text('Nessun prodotto disponibile'))
+              : ListView(
+                  padding: const EdgeInsets.all(10),
+                  children: ordineCategorie.map((cat) {
+                    // Filtriamo i prodotti che appartengono a questa specifica categoria
+                    final prodottiDellaCategoria = prodotti.where((p) => p.categoria.toLowerCase() == cat.toLowerCase()).toList();
+                    
+                    // Se non ci sono prodotti in questa categoria, non mostriamo nemmeno l'header
+                    if (prodottiDellaCategoria.isEmpty) return const SizedBox.shrink();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
+                          child: Text(
+                            cat.toUpperCase(),
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.orange),
+                          ),
+                        ),
+                        ...prodottiDellaCategoria.map((prodotto) => Card(
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          child: ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: prodotto.immagineUrl.isNotEmpty
+                                  ? Image.network(prodotto.immagineUrl, width: 60, height: 60, fit: BoxFit.cover, errorBuilder: (c,e,s) => const Icon(Icons.fastfood))
+                                  : const Icon(Icons.fastfood),
+                            ),
+                            title: Text(prodotto.nome, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('${prodotto.prezzo.toStringAsFixed(2)} €'),
+                            trailing: ElevatedButton(
+                              onPressed: () => setState(() => carrello.add(prodotto)),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                              child: const Text('Aggiungi', style: TextStyle(color: Colors.white)),
+                            ),
+                          ),
+                        )),
+                        const SizedBox(height: 10),
+                      ],
+                    );
+                  }).toList(),
                 ),
-              );
-            },
-          );
-        },
+      bottomNavigationBar: carrello.isEmpty ? null : Container(
+        padding: const EdgeInsets.all(20),
+        child: ElevatedButton(
+          onPressed: mostraCarrello,
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(double.infinity, 50)),
+          child: const Text('VEDI CARRELLO E ORDINA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
       ),
-      bottomNavigationBar: carrello.isEmpty 
-        ? null 
-        : Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Totale provvisorio'),
-                      Text('${calcolaTotale().toStringAsFixed(2)} €', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: mostraCarrello,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15)),
-                  child: const Text('VEDI CARRELLO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
     );
   }
 }
