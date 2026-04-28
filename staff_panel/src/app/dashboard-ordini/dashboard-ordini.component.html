@@ -1,31 +1,33 @@
-<h2>Ordini in Corso</h2>
-
-<div *if="ordini.length === 0">Nessun ordine presente.</div>
-
-<table border="1" style="width: 100%; border-collapse: collapse; text-align: left;">
-  <thead style="background-color: #f4f4f4;">
-    <tr>
-      <th>ID</th>
-      <th>Dettagli (Prodotti)</th>
-      <th>Totale</th>
-      <th>Stato</th>
-      <th>Azioni</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let ordine of ordini">
-      <td>{{ ordine.id }}</td>
-      <td>{{ ordine.dettagli }}</td>
-      <td>{{ ordine.totale }} €</td>
-      <td>
-        <span [style.color]="ordine.stato === 'completato' ? 'green' : 'orange'">
-          {{ ordine.stato }}
-        </span>
-      </td>
-      <td>
-        <button (click)="cambiaStato(ordine.id, 'in preparazione')" *ngIf="ordine.stato === 'in attesa'">Inizia</button>
-        <button (click)="cambiaStato(ordine.id, 'completato')" *ngIf="ordine.stato !== 'completato'">Completa</button>
-      </td>
-    </tr>
-  </tbody>
-</table>
+<div class="order-card">
+  <h2>📋 Ordini in Cucina</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Prodotti</th>
+        <th>Totale</th>
+        <th>Stato</th>
+        <th>Azioni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let ordine of ordini">
+        <td>#{{ ordine.id }}</td>
+        <td><strong>{{ ordine.dettagli }}</strong></td>
+        <td>{{ ordine.totale }} €</td>
+        <td>
+          <span class="status-badge" [ngClass]="ordine.stato.replace(' ', '-')">
+            {{ ordine.stato }}
+          </span>
+        </td>
+        <td>
+          <button class="btn-start" (click)="cambiaStato(ordine.id, 'in preparazione')" *ngIf="ordine.stato === 'in attesa'">CUCINA</button>
+          <button class="btn-done" (click)="cambiaStato(ordine.id, 'completato')" *ngIf="ordine.stato !== 'completato'">PRONTO</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div *ngIf="ordini.length === 0" style="text-align: center; padding: 20px;">
+    Nessun ordine presente al momento.
+  </div>
+</div>

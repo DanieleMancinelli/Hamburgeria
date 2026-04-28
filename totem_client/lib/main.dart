@@ -21,11 +21,18 @@ class MyApp extends StatelessWidget {
     );
 
     return MaterialApp.router(
-      title: 'Totem Hamburgeria',
-      debugShowCheckedModeBanner: false, // <-- TOGLIE LA SCRITTA DEBUG
+      title: 'Totem Gourmet',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
         useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFD4AF37), // Oro Gourmet
+          brightness: Brightness.dark,
+          surface: const Color(0xFF1E1E1E),
+          primary: const Color(0xFFD4AF37),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF0A0A0A), // Sfondo profondissimo
       ),
       routerConfig: router,
     );

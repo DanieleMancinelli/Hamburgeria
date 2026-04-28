@@ -1,9 +1,9 @@
-<nav style="background-color: #333; padding: 1rem; color: white;">
-  <span style="font-weight: bold; margin-right: 20px;">PANNELLO STAFF 🍔</span>
-  <a routerLink="/" style="color: white; margin-right: 15px;">Dashboard Ordini</a>
-  <a routerLink="/gestione-menu" style="color: white;">Gestione Menu</a>
+<nav>
+  <div class="brand">BURGER STAFF 🍔</div>
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Dashboard Ordini</a>
+  <a routerLink="/gestione-menu" routerLinkActive="active">Gestione Menu</a>
 </nav>
 
-<div style="padding: 20px;">
+<div class="container">
   <router-outlet></router-outlet>
 </div>

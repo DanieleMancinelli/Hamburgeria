@@ -1,0 +1,54 @@
+.order-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th {
+  text-align: left;
+  padding: 15px;
+  background: #f1f3f5;
+  color: #495057;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+td {
+  padding: 15px;
+  border-bottom: 1px solid #f1f3f5;
+  vertical-align: middle;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.in-attesa { background: #fff3bf; color: #856404; }
+.preparazione { background: #e3f2fd; color: #0d47a1; }
+.completato { background: #d4edda; color: #155724; }
+
+button {
+  padding: 8px 15px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
+  margin-right: 5px;
+}
+
+.btn-start { background-color: #007bff; color: white; }
+.btn-done { background-color: #28a745; color: white; }
+button:hover { opacity: 0.8; }
